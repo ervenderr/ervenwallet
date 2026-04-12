@@ -20,7 +20,7 @@ struct RootView: View {
                     Label("Budget", systemImage: "chart.pie")
                 }
 
-            PlaceholderTab(title: "Goals", systemImage: "target")
+            GoalsListView()
                 .tabItem {
                     Label("Goals", systemImage: "target")
                 }

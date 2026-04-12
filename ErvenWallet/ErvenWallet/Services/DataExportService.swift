@@ -11,6 +11,19 @@ struct ExportPayload: Codable {
     let categories: [CategoryDTO]
     let transactions: [TransactionDTO]
     let budgets: [BudgetDTO]
+    let savingsGoals: [SavingsGoalDTO]
+}
+
+struct SavingsGoalDTO: Codable {
+    let id: UUID
+    let name: String
+    let targetAmount: Decimal
+    let currentAmount: Decimal
+    let targetDate: Date?
+    let icon: String
+    let colorHex: String
+    let linkedAccountID: UUID?
+    let createdAt: Date
 }
 
 struct BudgetDTO: Codable {
@@ -59,7 +72,7 @@ struct TransactionDTO: Codable {
 }
 
 enum DataExportService {
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 3
 
     @MainActor
     static func export(from context: ModelContext) throws -> Data {
@@ -67,6 +80,7 @@ enum DataExportService {
         let categories = try context.fetch(FetchDescriptor<Category>())
         let transactions = try context.fetch(FetchDescriptor<Transaction>())
         let budgets = try context.fetch(FetchDescriptor<Budget>())
+        let savingsGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
 
         let payload = ExportPayload(
             schemaVersion: currentSchemaVersion,
@@ -75,7 +89,8 @@ enum DataExportService {
             accounts: accounts.map(AccountDTO.init(from:)),
             categories: categories.map(CategoryDTO.init(from:)),
             transactions: transactions.map(TransactionDTO.init(from:)),
-            budgets: budgets.map(BudgetDTO.init(from:))
+            budgets: budgets.map(BudgetDTO.init(from:)),
+            savingsGoals: savingsGoals.map(SavingsGoalDTO.init(from:))
         )
 
         let encoder = JSONEncoder()
@@ -154,5 +169,19 @@ private extension BudgetDTO {
         self.month = budget.month
         self.rollover = budget.rollover
         self.createdAt = budget.createdAt
+    }
+}
+
+private extension SavingsGoalDTO {
+    init(from goal: SavingsGoal) {
+        self.id = goal.id
+        self.name = goal.name
+        self.targetAmount = goal.targetAmount
+        self.currentAmount = goal.currentAmount
+        self.targetDate = goal.targetDate
+        self.icon = goal.icon
+        self.colorHex = goal.colorHex
+        self.linkedAccountID = goal.linkedAccount?.id
+        self.createdAt = goal.createdAt
     }
 }
