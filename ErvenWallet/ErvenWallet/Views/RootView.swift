@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.modelContext) private var modelContext
+
     var body: some View {
         TabView {
             WalletView()
@@ -8,7 +10,7 @@ struct RootView: View {
                     Label("Wallet", systemImage: "wallet.pass")
                 }
 
-            PlaceholderTab(title: "Transactions", systemImage: "list.bullet.rectangle")
+            TransactionListView()
                 .tabItem {
                     Label("Transactions", systemImage: "list.bullet.rectangle")
                 }
@@ -27,6 +29,9 @@ struct RootView: View {
                 .tabItem {
                     Label("More", systemImage: "ellipsis.circle")
                 }
+        }
+        .task {
+            DefaultCategories.seedIfNeeded(in: modelContext)
         }
     }
 }

@@ -5,7 +5,9 @@ import SwiftData
 struct ErvenWalletApp: App {
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Account.self
+            Account.self,
+            Category.self,
+            Transaction.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
