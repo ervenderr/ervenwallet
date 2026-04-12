@@ -25,7 +25,7 @@ struct RootView: View {
                     Label("Goals", systemImage: "target")
                 }
 
-            PlaceholderTab(title: "More", systemImage: "ellipsis.circle")
+            MoreView()
                 .tabItem {
                     Label("More", systemImage: "ellipsis.circle")
                 }
