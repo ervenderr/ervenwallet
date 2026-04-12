@@ -2,11 +2,11 @@
 
 This plan refines the spec at [`../Erven finance app spec and plan.md`](../Erven%20finance%20app%20spec%20and%20plan.md). Changes from the spec are called out inline.
 
-## Phase 0 — Validation Spike (2–3 days) — NEW
+## Phase 0 — Validation Spike — RESOLVED
 
-**Goal:** de-risk the two highest-unknown items before committing to 14 weeks of work.
-
-Tracked in [`PHASE-0-SPIKE.md`](PHASE-0-SPIKE.md). Decision gate at the end: go / downscope / fallback to Apple `NaturalLanguage`.
+**Outcome:** user's device is iPhone 11 (A13, 4GB RAM) — Gemma 4 E2B is not viable.
+**Decision:** Option A — downscope Phase 6 to Apple `NaturalLanguage` framework + hand-rolled rules-based parser. No Gemma, no LiteRT-LM.
+**Impact:** Phases 1–5 unchanged. Phase 6 rewritten (see below).
 
 ## Phase 1 — Foundation + Dogfoodable Core (Weeks 1–2)
 
@@ -72,16 +72,14 @@ Tracked in [`PHASE-0-SPIKE.md`](PHASE-0-SPIKE.md). Decision gate at the end: go 
 - [ ] TestFlight upload, README screenshots
 - [ ] Apple Developer enrollment (if not done earlier)
 
-## Phase 6 — On-Device AI (Weeks 11–14)
+## Phase 6 — Smart NL Entry & Insights (Weeks 11–12, downscoped)
 
-Each week independently shippable behind a feature flag.
+Runs on iPhone 11 — no LLM, no model download, no GB of weights.
 
-- **Week 11:** LiteRT-LM package, `GemmaService`, `ModelDownloadManager`, `ModelSetupView`, basic `AIChatView`
-- **Week 12:** `TransactionParser` + function calling; Taglish/shorthand handling; `TransactionConfirmCard`; fallback to manual form on parse failure
-- **Week 13:** `FinancialQueryEngine` + context injection; `InsightGenerator` + weekly notification
-- **Week 14 (stretch):** Receipt vision via E4B; agent skills; thermal/memory tuning
+- **Week 11:** `TransactionParser` using Apple `NaturalLanguage` + regex rules. Taglish ("sa Jollibee"), shorthand ("5k", "2.5k"), merchant → category mapping. Unit tests against fixture set of 50+ prompts (target ≥85% parse success).
+- **Week 12:** `FinancialQueryEngine` — keyword routing ("how much", "net worth", "over budget") → SwiftData queries → templated responses. `InsightGenerator` — weekly spending summary via rules, fires local notification.
 
-If Week 14 slips → ship Weeks 11–13 as "AI v1", receipt scan as v1.1.
+**Deferred to v2 (if user upgrades to iPhone 14+):** on-device Gemma 4 via LiteRT-LM for true NL chat, receipt vision, agent skills.
 
 ## Testing Strategy
 
