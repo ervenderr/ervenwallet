@@ -4,6 +4,7 @@ import SwiftData
 struct WalletView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Account.createdAt) private var accounts: [Account]
+    @State private var showingAddSheet = false
 
     private var netWorth: Decimal {
         accounts.reduce(Decimal.zero) { $0 + $1.balance }
@@ -22,13 +23,21 @@ struct WalletView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        // Sheet wired in next chunk
+                        showingAddSheet = true
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .disabled(true)
                 }
             }
+            .sheet(isPresented: $showingAddSheet) {
+                AddAccountSheet()
+            }
+        }
+    }
+
+    private func deleteAccounts(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(accounts[index])
         }
     }
 
@@ -57,6 +66,7 @@ struct WalletView: View {
                 ForEach(accounts) { account in
                     AccountRow(account: account)
                 }
+                .onDelete(perform: deleteAccounts)
             }
         }
     }
