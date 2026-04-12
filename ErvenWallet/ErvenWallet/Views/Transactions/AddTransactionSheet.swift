@@ -6,7 +6,7 @@ struct AddTransactionSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query(sort: \Account.createdAt) private var accounts: [Account]
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
+    @Query(sort: \TxnCategory.sortOrder) private var categories: [TxnCategory]
 
     @State private var type: TransactionType = .expense
     @State private var amountText: String = ""
@@ -20,7 +20,7 @@ struct AddTransactionSheet: View {
         Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? .zero
     }
 
-    private var filteredCategories: [Category] {
+    private var filteredCategories: [TxnCategory] {
         let target: CategoryType = type == .income ? .income : .expense
         return categories.filter { $0.type == target }
     }
@@ -33,7 +33,7 @@ struct AddTransactionSheet: View {
         accounts.first { $0.id == selectedToAccountID }
     }
 
-    private var selectedCategory: Category? {
+    private var selectedCategory: TxnCategory? {
         categories.first { $0.id == selectedCategoryID }
     }
 
@@ -151,5 +151,5 @@ struct AddTransactionSheet: View {
 
 #Preview {
     AddTransactionSheet()
-        .modelContainer(for: [Account.self, Category.self, Transaction.self], inMemory: true)
+        .modelContainer(for: [Account.self, TxnCategory.self, Transaction.self], inMemory: true)
 }

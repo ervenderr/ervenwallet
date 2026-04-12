@@ -147,5 +147,5 @@ private struct TransactionRow: View {
 
 #Preview {
     TransactionListView()
-        .modelContainer(for: [Account.self, Category.self, Transaction.self], inMemory: true)
+        .modelContainer(for: [Account.self, TxnCategory.self, Transaction.self], inMemory: true)
 }

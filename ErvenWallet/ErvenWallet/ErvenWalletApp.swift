@@ -6,7 +6,7 @@ struct ErvenWalletApp: App {
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Account.self,
-            Category.self,
+            TxnCategory.self,
             Transaction.self,
             Budget.self,
             SavingsGoal.self

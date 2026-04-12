@@ -7,25 +7,25 @@ struct AddBudgetSheet: View {
 
     let month: Date
 
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
+    @Query(sort: \TxnCategory.sortOrder) private var categories: [TxnCategory]
     @Query private var existingBudgets: [Budget]
 
     @State private var selectedCategoryID: UUID?
     @State private var amountText: String = ""
     @State private var rollover: Bool = false
 
-    private var expenseCategories: [Category] {
+    private var expenseCategories: [TxnCategory] {
         categories.filter { $0.type == .expense }
     }
 
-    private var availableCategories: [Category] {
+    private var availableCategories: [TxnCategory] {
         let usedIDs = Set(existingBudgets
             .filter { $0.month == month }
             .compactMap { $0.category?.id })
         return expenseCategories.filter { !usedIDs.contains($0.id) }
     }
 
-    private var selectedCategory: Category? {
+    private var selectedCategory: TxnCategory? {
         categories.first { $0.id == selectedCategoryID }
     }
 
@@ -96,5 +96,5 @@ struct AddBudgetSheet: View {
 
 #Preview {
     AddBudgetSheet(month: Date())
-        .modelContainer(for: [Category.self, Budget.self], inMemory: true)
+        .modelContainer(for: [TxnCategory.self, Budget.self], inMemory: true)
 }

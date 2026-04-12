@@ -166,5 +166,5 @@ private struct BudgetRow: View {
 
 #Preview {
     BudgetOverviewView()
-        .modelContainer(for: [Account.self, Category.self, Transaction.self, Budget.self], inMemory: true)
+        .modelContainer(for: [Account.self, TxnCategory.self, Transaction.self, Budget.self], inMemory: true)
 }

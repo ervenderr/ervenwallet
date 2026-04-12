@@ -12,14 +12,14 @@ final class Transaction {
 
     var account: Account?
     var toAccount: Account?
-    var category: Category?
+    var category: TxnCategory?
 
     init(
         amount: Decimal,
         type: TransactionType,
         account: Account?,
         toAccount: Account? = nil,
-        category: Category? = nil,
+        category: TxnCategory? = nil,
         date: Date = Date(),
         notes: String? = nil
     ) {

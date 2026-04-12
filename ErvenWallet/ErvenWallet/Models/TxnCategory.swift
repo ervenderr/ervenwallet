@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Category {
+final class TxnCategory {
     var id: UUID = UUID()
     var name: String = ""
     var icon: String = "tag"

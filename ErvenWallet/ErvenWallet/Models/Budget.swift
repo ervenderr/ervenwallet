@@ -9,10 +9,10 @@ final class Budget {
     var rollover: Bool = false
     var createdAt: Date = Date()
 
-    var category: Category?
+    var category: TxnCategory?
 
     init(
-        category: Category,
+        category: TxnCategory,
         amount: Decimal,
         month: Date,
         rollover: Bool = false

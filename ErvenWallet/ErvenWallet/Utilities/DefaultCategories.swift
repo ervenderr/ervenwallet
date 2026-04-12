@@ -39,12 +39,12 @@ enum DefaultCategories {
     /// Inserts default categories if none exist yet. Safe to call on every launch.
     @MainActor
     static func seedIfNeeded(in context: ModelContext) {
-        let descriptor = FetchDescriptor<Category>()
+        let descriptor = FetchDescriptor<TxnCategory>()
         let existingCount = (try? context.fetchCount(descriptor)) ?? 0
         guard existingCount == 0 else { return }
 
         for (index, seed) in all.enumerated() {
-            let category = Category(
+            let category = TxnCategory(
                 name: seed.name,
                 icon: seed.icon,
                 colorHex: seed.colorHex,

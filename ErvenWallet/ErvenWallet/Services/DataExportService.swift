@@ -77,7 +77,7 @@ enum DataExportService {
     @MainActor
     static func export(from context: ModelContext) throws -> Data {
         let accounts = try context.fetch(FetchDescriptor<Account>())
-        let categories = try context.fetch(FetchDescriptor<Category>())
+        let categories = try context.fetch(FetchDescriptor<TxnCategory>())
         let transactions = try context.fetch(FetchDescriptor<Transaction>())
         let budgets = try context.fetch(FetchDescriptor<Budget>())
         let savingsGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
@@ -136,7 +136,7 @@ private extension AccountDTO {
 }
 
 private extension CategoryDTO {
-    init(from category: Category) {
+    init(from category: TxnCategory) {
         self.id = category.id
         self.name = category.name
         self.icon = category.icon
