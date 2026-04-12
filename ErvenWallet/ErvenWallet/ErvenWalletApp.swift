@@ -7,7 +7,8 @@ struct ErvenWalletApp: App {
         let schema = Schema([
             Account.self,
             Category.self,
-            Transaction.self
+            Transaction.self,
+            Budget.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

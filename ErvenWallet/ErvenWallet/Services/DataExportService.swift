@@ -10,6 +10,16 @@ struct ExportPayload: Codable {
     let accounts: [AccountDTO]
     let categories: [CategoryDTO]
     let transactions: [TransactionDTO]
+    let budgets: [BudgetDTO]
+}
+
+struct BudgetDTO: Codable {
+    let id: UUID
+    let categoryID: UUID?
+    let amount: Decimal
+    let month: Date
+    let rollover: Bool
+    let createdAt: Date
 }
 
 struct AccountDTO: Codable {
@@ -49,13 +59,14 @@ struct TransactionDTO: Codable {
 }
 
 enum DataExportService {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     @MainActor
     static func export(from context: ModelContext) throws -> Data {
         let accounts = try context.fetch(FetchDescriptor<Account>())
         let categories = try context.fetch(FetchDescriptor<Category>())
         let transactions = try context.fetch(FetchDescriptor<Transaction>())
+        let budgets = try context.fetch(FetchDescriptor<Budget>())
 
         let payload = ExportPayload(
             schemaVersion: currentSchemaVersion,
@@ -63,7 +74,8 @@ enum DataExportService {
             appVersion: appVersion,
             accounts: accounts.map(AccountDTO.init(from:)),
             categories: categories.map(CategoryDTO.init(from:)),
-            transactions: transactions.map(TransactionDTO.init(from:))
+            transactions: transactions.map(TransactionDTO.init(from:)),
+            budgets: budgets.map(BudgetDTO.init(from:))
         )
 
         let encoder = JSONEncoder()
@@ -131,5 +143,16 @@ private extension TransactionDTO {
         self.toAccountID = transaction.toAccount?.id
         self.categoryID = transaction.category?.id
         self.createdAt = transaction.createdAt
+    }
+}
+
+private extension BudgetDTO {
+    init(from budget: Budget) {
+        self.id = budget.id
+        self.categoryID = budget.category?.id
+        self.amount = budget.amount
+        self.month = budget.month
+        self.rollover = budget.rollover
+        self.createdAt = budget.createdAt
     }
 }

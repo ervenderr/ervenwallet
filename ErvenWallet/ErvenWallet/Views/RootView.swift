@@ -15,7 +15,7 @@ struct RootView: View {
                     Label("Transactions", systemImage: "list.bullet.rectangle")
                 }
 
-            PlaceholderTab(title: "Budget", systemImage: "chart.pie")
+            BudgetOverviewView()
                 .tabItem {
                     Label("Budget", systemImage: "chart.pie")
                 }
