@@ -7,6 +7,7 @@ struct GoalsListView: View {
 
     @State private var showingAddSheet = false
     @State private var contributingTo: SavingsGoal?
+    @State private var editingGoal: SavingsGoal?
 
     var body: some View {
         NavigationStack {
@@ -32,6 +33,9 @@ struct GoalsListView: View {
             }
             .sheet(item: $contributingTo) { goal in
                 LogContributionSheet(goal: goal).themeSheet()
+            }
+            .sheet(item: $editingGoal) { goal in
+                AddGoalSheet(editing: goal).themeSheet()
             }
         }
     }
@@ -73,6 +77,11 @@ struct GoalsListView: View {
                                 contributingTo = goal
                             } label: {
                                 Label("Contribute", systemImage: "plus.circle")
+                            }
+                            Button {
+                                editingGoal = goal
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
                             }
                             Button(role: .destructive) {
                                 modelContext.delete(goal)

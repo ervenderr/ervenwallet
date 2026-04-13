@@ -7,6 +7,7 @@ struct BudgetOverviewView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
 
     @State private var showingAddSheet = false
+    @State private var editingBudget: Budget?
 
     private var currentMonth: Date {
         Budget.normalize(month: Date())
@@ -45,6 +46,9 @@ struct BudgetOverviewView: View {
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddBudgetSheet(month: currentMonth).themeSheet()
+            }
+            .sheet(item: $editingBudget) { budget in
+                AddBudgetSheet(month: currentMonth, editing: budget).themeSheet()
             }
         }
     }
@@ -88,7 +92,17 @@ struct BudgetOverviewView: View {
                                 .padding(Theme.Spacing.md)
                                 .background(Theme.Palette.surfaceElevated)
                                 .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    editingBudget = budget
+                                    Haptics.impact(.light)
+                                }
                                 .contextMenu {
+                                    Button {
+                                        editingBudget = budget
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
                                     Button(role: .destructive) {
                                         modelContext.delete(budget)
                                         Haptics.impact(.medium)

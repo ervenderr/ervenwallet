@@ -5,6 +5,7 @@ struct TransactionListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @State private var showingAddSheet = false
+    @State private var editingTransaction: Transaction?
     @State private var filter: Filter = .all
 
     enum Filter: String, CaseIterable, Identifiable {
@@ -72,6 +73,10 @@ struct TransactionListView: View {
                 AddTransactionSheet()
                     .presentationDragIndicator(.visible)
             }
+            .sheet(item: $editingTransaction) { transaction in
+                AddTransactionSheet(editing: transaction)
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -110,7 +115,17 @@ struct TransactionListView: View {
                                 TransactionRow(transaction: transaction)
                                     .padding(Theme.Spacing.md)
                                     .background(Theme.Palette.surfaceElevated)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        editingTransaction = transaction
+                                        Haptics.impact(.light)
+                                    }
                                     .contextMenu {
+                                        Button {
+                                            editingTransaction = transaction
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
                                         Button(role: .destructive) {
                                             transaction.revertFromBalances()
                                             modelContext.delete(transaction)

@@ -5,12 +5,24 @@ struct AddAccountSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name: String = ""
-    @State private var type: AccountType = .cash
-    @State private var balanceText: String = ""
-    @State private var creditLimitText: String = ""
-    @State private var statementDay: Int = 1
-    @State private var dueDay: Int = 15
+    let editing: Account?
+
+    @State private var name: String
+    @State private var type: AccountType
+    @State private var balanceText: String
+    @State private var creditLimitText: String
+    @State private var statementDay: Int
+    @State private var dueDay: Int
+
+    init(editing: Account? = nil) {
+        self.editing = editing
+        _name = State(initialValue: editing?.name ?? "")
+        _type = State(initialValue: editing?.type ?? .cash)
+        _balanceText = State(initialValue: editing.map { "\($0.balance)" } ?? "")
+        _creditLimitText = State(initialValue: editing?.creditLimit.map { "\($0)" } ?? "")
+        _statementDay = State(initialValue: editing?.statementDay ?? 1)
+        _dueDay = State(initialValue: editing?.dueDay ?? 15)
+    }
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -62,7 +74,7 @@ struct AddAccountSheet: View {
                     }
                 }
             }
-            .navigationTitle("New Account")
+            .navigationTitle(editing == nil ? "New Account" : "Edit Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -77,15 +89,25 @@ struct AddAccountSheet: View {
     }
 
     private func save() {
-        let account = Account(
-            name: trimmedName,
-            type: type,
-            balance: parsedBalance,
-            creditLimit: type == .creditCard ? parsedCreditLimit : nil,
-            statementDay: type == .creditCard ? statementDay : nil,
-            dueDay: type == .creditCard ? dueDay : nil
-        )
-        modelContext.insert(account)
+        if let existing = editing {
+            existing.name = trimmedName
+            existing.typeRaw = type.rawValue
+            existing.balance = parsedBalance
+            existing.creditLimit = type == .creditCard ? parsedCreditLimit : nil
+            existing.statementDay = type == .creditCard ? statementDay : nil
+            existing.dueDay = type == .creditCard ? dueDay : nil
+        } else {
+            let account = Account(
+                name: trimmedName,
+                type: type,
+                balance: parsedBalance,
+                creditLimit: type == .creditCard ? parsedCreditLimit : nil,
+                statementDay: type == .creditCard ? statementDay : nil,
+                dueDay: type == .creditCard ? dueDay : nil
+            )
+            modelContext.insert(account)
+        }
+        Haptics.notify(.success)
         dismiss()
     }
 }

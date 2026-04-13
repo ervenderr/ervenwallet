@@ -7,12 +7,24 @@ struct AddGoalSheet: View {
 
     @Query(sort: \Account.createdAt) private var accounts: [Account]
 
-    @State private var name: String = ""
-    @State private var targetText: String = ""
-    @State private var initialText: String = ""
-    @State private var hasTargetDate: Bool = false
-    @State private var targetDate: Date = Date().addingTimeInterval(60 * 60 * 24 * 90)
+    let editing: SavingsGoal?
+
+    @State private var name: String
+    @State private var targetText: String
+    @State private var initialText: String
+    @State private var hasTargetDate: Bool
+    @State private var targetDate: Date
     @State private var linkedAccountID: UUID?
+
+    init(editing: SavingsGoal? = nil) {
+        self.editing = editing
+        _name = State(initialValue: editing?.name ?? "")
+        _targetText = State(initialValue: editing.map { "\($0.targetAmount)" } ?? "")
+        _initialText = State(initialValue: editing.map { "\($0.currentAmount)" } ?? "")
+        _hasTargetDate = State(initialValue: editing?.targetDate != nil)
+        _targetDate = State(initialValue: editing?.targetDate ?? Date().addingTimeInterval(60 * 60 * 24 * 90))
+        _linkedAccountID = State(initialValue: editing?.linkedAccount?.id)
+    }
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -68,7 +80,7 @@ struct AddGoalSheet: View {
                     }
                 }
             }
-            .navigationTitle("New Goal")
+            .navigationTitle(editing == nil ? "New Goal" : "Edit Goal")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -83,14 +95,23 @@ struct AddGoalSheet: View {
     }
 
     private func save() {
-        let goal = SavingsGoal(
-            name: trimmedName,
-            targetAmount: parsedTarget,
-            currentAmount: parsedInitial,
-            targetDate: hasTargetDate ? targetDate : nil,
-            linkedAccount: linkedAccount
-        )
-        modelContext.insert(goal)
+        if let existing = editing {
+            existing.name = trimmedName
+            existing.targetAmount = parsedTarget
+            existing.currentAmount = parsedInitial
+            existing.targetDate = hasTargetDate ? targetDate : nil
+            existing.linkedAccount = linkedAccount
+        } else {
+            let goal = SavingsGoal(
+                name: trimmedName,
+                targetAmount: parsedTarget,
+                currentAmount: parsedInitial,
+                targetDate: hasTargetDate ? targetDate : nil,
+                linkedAccount: linkedAccount
+            )
+            modelContext.insert(goal)
+        }
+        Haptics.notify(.success)
         dismiss()
     }
 }

@@ -5,13 +5,26 @@ struct AddDebtSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name: String = ""
-    @State private var direction: DebtDirection = .owed
-    @State private var totalText: String = ""
-    @State private var rateText: String = ""
-    @State private var hasDueDate: Bool = false
-    @State private var dueDate: Date = Date().addingTimeInterval(60 * 60 * 24 * 30)
-    @State private var notes: String = ""
+    let editing: Debt?
+
+    @State private var name: String
+    @State private var direction: DebtDirection
+    @State private var totalText: String
+    @State private var rateText: String
+    @State private var hasDueDate: Bool
+    @State private var dueDate: Date
+    @State private var notes: String
+
+    init(editing: Debt? = nil) {
+        self.editing = editing
+        _name = State(initialValue: editing?.name ?? "")
+        _direction = State(initialValue: editing?.direction ?? .owed)
+        _totalText = State(initialValue: editing.map { "\($0.totalAmount)" } ?? "")
+        _rateText = State(initialValue: editing?.interestRate.map { "\($0)" } ?? "")
+        _hasDueDate = State(initialValue: editing?.dueDate != nil)
+        _dueDate = State(initialValue: editing?.dueDate ?? Date().addingTimeInterval(60 * 60 * 24 * 30))
+        _notes = State(initialValue: editing?.notes ?? "")
+    }
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -68,7 +81,7 @@ struct AddDebtSheet: View {
                         .lineLimit(1...4)
                 }
             }
-            .navigationTitle("New Debt")
+            .navigationTitle(editing == nil ? "New Debt" : "Edit Debt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -84,15 +97,29 @@ struct AddDebtSheet: View {
 
     private func save() {
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        let debt = Debt(
-            name: trimmedName,
-            direction: direction,
-            totalAmount: parsedTotal,
-            interestRate: parsedRate,
-            dueDate: hasDueDate ? dueDate : nil,
-            notes: trimmedNotes.isEmpty ? nil : trimmedNotes
-        )
-        modelContext.insert(debt)
+        let resolvedNotes = trimmedNotes.isEmpty ? nil : trimmedNotes
+        if let existing = editing {
+            existing.name = trimmedName
+            existing.directionRaw = direction.rawValue
+            // Preserve paid progress: adjust remaining to reflect new total.
+            let paid = existing.totalAmount - existing.remainingAmount
+            existing.totalAmount = parsedTotal
+            existing.remainingAmount = max(parsedTotal - paid, 0)
+            existing.interestRate = parsedRate
+            existing.dueDate = hasDueDate ? dueDate : nil
+            existing.notes = resolvedNotes
+        } else {
+            let debt = Debt(
+                name: trimmedName,
+                direction: direction,
+                totalAmount: parsedTotal,
+                interestRate: parsedRate,
+                dueDate: hasDueDate ? dueDate : nil,
+                notes: resolvedNotes
+            )
+            modelContext.insert(debt)
+        }
+        Haptics.notify(.success)
         dismiss()
     }
 }

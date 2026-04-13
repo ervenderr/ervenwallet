@@ -6,6 +6,7 @@ struct WalletView: View {
     @Query(sort: \Account.createdAt) private var accounts: [Account]
     @Query private var transactions: [Transaction]
     @State private var showingAddSheet = false
+    @State private var editingAccount: Account?
 
     private var netWorth: Decimal {
         var total: Decimal = .zero
@@ -40,6 +41,9 @@ struct WalletView: View {
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddAccountSheet().themeSheet()
+            }
+            .sheet(item: $editingAccount) { account in
+                AddAccountSheet(editing: account).themeSheet()
             }
         }
     }
@@ -89,9 +93,20 @@ struct WalletView: View {
                                 .padding(Theme.Spacing.md)
                                 .background(Theme.Palette.surfaceElevated)
                                 .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    editingAccount = account
+                                    Haptics.impact(.light)
+                                }
                                 .contextMenu {
+                                    Button {
+                                        editingAccount = account
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
                                     Button(role: .destructive) {
                                         modelContext.delete(account)
+                                        Haptics.impact(.medium)
                                     } label: {
                                         Label("Delete", systemImage: "trash")
                                     }

@@ -7,6 +7,7 @@ struct DebtListView: View {
 
     @State private var showingAddSheet = false
     @State private var payingDebt: Debt?
+    @State private var editingDebt: Debt?
 
     private var iOwe: [Debt] {
         debts.filter { $0.direction == .owed }
@@ -47,6 +48,9 @@ struct DebtListView: View {
         }
         .sheet(item: $payingDebt) { debt in
             LogPaymentSheet(debt: debt).themeSheet()
+        }
+        .sheet(item: $editingDebt) { debt in
+            AddDebtSheet(editing: debt).themeSheet()
         }
     }
 
@@ -146,6 +150,11 @@ struct DebtListView: View {
                                 payingDebt = debt
                             } label: {
                                 Label("Log Payment", systemImage: "creditcard")
+                            }
+                            Button {
+                                editingDebt = debt
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
                             }
                             Button(role: .destructive) {
                                 modelContext.delete(debt)

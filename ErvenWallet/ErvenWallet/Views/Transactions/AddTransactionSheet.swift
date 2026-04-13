@@ -8,10 +8,12 @@ struct AddTransactionSheet: View {
     @Query(sort: \Account.createdAt) private var accounts: [Account]
     @Query(sort: \TxnCategory.sortOrder) private var categories: [TxnCategory]
 
-    @State private var type: TransactionType = .expense
-    @State private var amountText: String = ""
-    @State private var date: Date = Date()
-    @State private var notes: String = ""
+    let editing: Transaction?
+
+    @State private var type: TransactionType
+    @State private var amountText: String
+    @State private var date: Date
+    @State private var notes: String
     @State private var selectedCategoryID: UUID?
     @State private var selectedAccountID: UUID?
     @State private var selectedToAccountID: UUID?
@@ -19,6 +21,17 @@ struct AddTransactionSheet: View {
     @State private var frequency: Frequency = .monthly
     @State private var hasEndDate: Bool = false
     @State private var endDate: Date = Date().addingTimeInterval(60 * 60 * 24 * 365)
+
+    init(editing: Transaction? = nil) {
+        self.editing = editing
+        _type = State(initialValue: editing?.type ?? .expense)
+        _amountText = State(initialValue: editing.map { "\($0.amount)" } ?? "")
+        _date = State(initialValue: editing?.date ?? Date())
+        _notes = State(initialValue: editing?.notes ?? "")
+        _selectedCategoryID = State(initialValue: editing?.category?.id)
+        _selectedAccountID = State(initialValue: editing?.account?.id)
+        _selectedToAccountID = State(initialValue: editing?.toAccount?.id)
+    }
 
     private var parsedAmount: Decimal {
         Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? .zero
@@ -102,28 +115,30 @@ struct AddTransactionSheet: View {
                         .lineLimit(1...3)
                 }
 
-                Section {
-                    Toggle("Recurring", isOn: $isRecurring)
-                    if isRecurring {
-                        Picker("Frequency", selection: $frequency) {
-                            ForEach(Frequency.allCases) { freq in
-                                Text(freq.rawValue.capitalized).tag(freq)
+                if editing == nil {
+                    Section {
+                        Toggle("Recurring", isOn: $isRecurring)
+                        if isRecurring {
+                            Picker("Frequency", selection: $frequency) {
+                                ForEach(Frequency.allCases) { freq in
+                                    Text(freq.rawValue.capitalized).tag(freq)
+                                }
+                            }
+                            Toggle("Set end date", isOn: $hasEndDate)
+                            if hasEndDate {
+                                DatePicker("Ends on", selection: $endDate, displayedComponents: .date)
                             }
                         }
-                        Toggle("Set end date", isOn: $hasEndDate)
-                        if hasEndDate {
-                            DatePicker("Ends on", selection: $endDate, displayedComponents: .date)
+                    } header: {
+                        Text("Repeat")
+                    } footer: {
+                        if isRecurring {
+                            Text("First occurrence is created immediately. Future ones generate when you open the app.")
                         }
-                    }
-                } header: {
-                    Text("Repeat")
-                } footer: {
-                    if isRecurring {
-                        Text("First occurrence is created immediately. Future ones generate when you open the app.")
                     }
                 }
             }
-            .navigationTitle("New Transaction")
+            .navigationTitle(editing == nil ? "New Transaction" : "Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -161,7 +176,18 @@ struct AddTransactionSheet: View {
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedNotes = trimmedNotes.isEmpty ? nil : trimmedNotes
 
-        if isRecurring {
+        if let existing = editing {
+            // Revert old effect, mutate, re-apply new effect.
+            existing.revertFromBalances()
+            existing.amount = parsedAmount
+            existing.type = type
+            existing.account = account
+            existing.toAccount = type == .transfer ? selectedToAccount : nil
+            existing.category = type == .transfer ? nil : selectedCategory
+            existing.date = date
+            existing.notes = resolvedNotes
+            existing.applyToBalances()
+        } else if isRecurring {
             let rule = RecurringRule(
                 amount: parsedAmount,
                 type: type,

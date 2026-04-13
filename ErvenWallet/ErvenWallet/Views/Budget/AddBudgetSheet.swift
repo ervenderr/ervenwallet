@@ -6,22 +6,34 @@ struct AddBudgetSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let month: Date
+    let editing: Budget?
 
     @Query(sort: \TxnCategory.sortOrder) private var categories: [TxnCategory]
     @Query private var existingBudgets: [Budget]
 
     @State private var selectedCategoryID: UUID?
-    @State private var amountText: String = ""
-    @State private var rollover: Bool = false
+    @State private var amountText: String
+    @State private var rollover: Bool
+
+    init(month: Date, editing: Budget? = nil) {
+        self.month = month
+        self.editing = editing
+        _selectedCategoryID = State(initialValue: editing?.category?.id)
+        _amountText = State(initialValue: editing.map { "\($0.amount)" } ?? "")
+        _rollover = State(initialValue: editing?.rollover ?? false)
+    }
 
     private var expenseCategories: [TxnCategory] {
         categories.filter { $0.type == .expense }
     }
 
     private var availableCategories: [TxnCategory] {
-        let usedIDs = Set(existingBudgets
+        var usedIDs = Set(existingBudgets
             .filter { $0.month == month }
             .compactMap { $0.category?.id })
+        if let editingCategoryID = editing?.category?.id {
+            usedIDs.remove(editingCategoryID)
+        }
         return expenseCategories.filter { !usedIDs.contains($0.id) }
     }
 
@@ -67,7 +79,7 @@ struct AddBudgetSheet: View {
                     Text("Rollover support is planned — toggle is saved but not yet applied.")
                 }
             }
-            .navigationTitle("New Budget")
+            .navigationTitle(editing == nil ? "New Budget" : "Edit Budget")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -83,13 +95,20 @@ struct AddBudgetSheet: View {
 
     private func save() {
         guard let category = selectedCategory else { return }
-        let budget = Budget(
-            category: category,
-            amount: parsedAmount,
-            month: month,
-            rollover: rollover
-        )
-        modelContext.insert(budget)
+        if let existing = editing {
+            existing.category = category
+            existing.amount = parsedAmount
+            existing.rollover = rollover
+        } else {
+            let budget = Budget(
+                category: category,
+                amount: parsedAmount,
+                month: month,
+                rollover: rollover
+            )
+            modelContext.insert(budget)
+        }
+        Haptics.notify(.success)
         dismiss()
     }
 }
