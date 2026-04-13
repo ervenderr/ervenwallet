@@ -89,28 +89,28 @@ struct WalletView: View {
 
                     VStack(spacing: Theme.Spacing.sm) {
                         ForEach(accounts) { account in
-                            AccountRow(account: account, transactions: transactions)
-                                .padding(Theme.Spacing.md)
-                                .background(Theme.Palette.surfaceElevated)
-                                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
-                                .contentShape(Rectangle())
-                                .onTapGesture {
+                            NavigationLink {
+                                AccountDetailView(account: account)
+                            } label: {
+                                AccountRow(account: account, transactions: transactions)
+                                    .padding(Theme.Spacing.md)
+                                    .background(Theme.Palette.surfaceElevated)
+                                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button {
                                     editingAccount = account
-                                    Haptics.impact(.light)
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
                                 }
-                                .contextMenu {
-                                    Button {
-                                        editingAccount = account
-                                    } label: {
-                                        Label("Edit", systemImage: "pencil")
-                                    }
-                                    Button(role: .destructive) {
-                                        modelContext.delete(account)
-                                        Haptics.impact(.medium)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
+                                Button(role: .destructive) {
+                                    modelContext.delete(account)
+                                    Haptics.impact(.medium)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
+                            }
                         }
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
