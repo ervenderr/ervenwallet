@@ -33,6 +33,19 @@ struct AddTransactionSheet: View {
         _selectedToAccountID = State(initialValue: editing?.toAccount?.id)
     }
 
+    /// Create a fresh sheet prefilled from a quick-add parse result.
+    /// Used when the parser got partial info but couldn't auto-save.
+    init(prefill: QuickAddParser.Draft) {
+        self.editing = nil
+        _type = State(initialValue: prefill.type == .income ? .income : .expense)
+        _amountText = State(initialValue: prefill.amount.map { "\($0)" } ?? "")
+        _date = State(initialValue: prefill.date)
+        _notes = State(initialValue: prefill.notes ?? "")
+        _selectedCategoryID = State(initialValue: nil)
+        _selectedAccountID = State(initialValue: nil)
+        _selectedToAccountID = State(initialValue: nil)
+    }
+
     private var parsedAmount: Decimal {
         Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? .zero
     }

@@ -81,6 +81,10 @@ struct TransactionListView: View {
                     emptyState
                 } else {
                     VStack(spacing: 0) {
+                        QuickAddBar()
+                            .padding(.horizontal, Theme.Spacing.lg)
+                            .padding(.top, Theme.Spacing.sm)
+
                         Picker("Filter", selection: $filter) {
                             ForEach(Filter.allCases) { option in
                                 Text(option.label).tag(option)
