@@ -7,6 +7,8 @@ struct TransactionListView: View {
     @State private var showingAddSheet = false
     @State private var editingTransaction: Transaction?
     @State private var filter: Filter = .all
+    @State private var dateRange: DateRange = .allTime
+    @State private var searchText: String = ""
 
     enum Filter: String, CaseIterable, Identifiable {
         case all, expense, income, transfer
@@ -21,12 +23,54 @@ struct TransactionListView: View {
         }
     }
 
+    enum DateRange: String, CaseIterable, Identifiable {
+        case allTime = "All"
+        case thisMonth = "This Month"
+        case lastMonth = "Last Month"
+        case last30 = "Last 30 Days"
+        case last90 = "Last 90 Days"
+        var id: String { rawValue }
+
+        func contains(_ date: Date) -> Bool {
+            let calendar = Calendar.current
+            let now = Date()
+            switch self {
+            case .allTime:
+                return true
+            case .thisMonth:
+                return calendar.isDate(date, equalTo: now, toGranularity: .month)
+            case .lastMonth:
+                guard let lastMonth = calendar.date(byAdding: .month, value: -1, to: now) else { return false }
+                return calendar.isDate(date, equalTo: lastMonth, toGranularity: .month)
+            case .last30:
+                guard let cutoff = calendar.date(byAdding: .day, value: -30, to: now) else { return false }
+                return date >= cutoff
+            case .last90:
+                guard let cutoff = calendar.date(byAdding: .day, value: -90, to: now) else { return false }
+                return date >= cutoff
+            }
+        }
+    }
+
     private var filteredTransactions: [Transaction] {
+        let typeFiltered: [Transaction]
         switch filter {
-        case .all: return transactions
-        case .expense: return transactions.filter { $0.type == .expense }
-        case .income: return transactions.filter { $0.type == .income }
-        case .transfer: return transactions.filter { $0.type == .transfer }
+        case .all: typeFiltered = transactions
+        case .expense: typeFiltered = transactions.filter { $0.type == .expense }
+        case .income: typeFiltered = transactions.filter { $0.type == .income }
+        case .transfer: typeFiltered = transactions.filter { $0.type == .transfer }
+        }
+
+        let dateFiltered = typeFiltered.filter { dateRange.contains($0.date) }
+
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !trimmed.isEmpty else { return dateFiltered }
+        return dateFiltered.filter { txn in
+            if let notes = txn.notes?.lowercased(), notes.contains(trimmed) { return true }
+            if let category = txn.category?.name.lowercased(), category.contains(trimmed) { return true }
+            if let account = txn.account?.name.lowercased(), account.contains(trimmed) { return true }
+            if "\(txn.amount)".contains(trimmed) { return true }
+            return false
         }
     }
 
@@ -59,6 +103,20 @@ struct TransactionListView: View {
                 }
             }
             .navigationTitle("Transactions")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search notes, category, amount")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("Date Range", selection: $dateRange) {
+                            ForEach(DateRange.allCases) { range in
+                                Text(range.rawValue).tag(range)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: dateRange == .allTime ? "calendar" : "calendar.badge.checkmark")
+                    }
+                }
+            }
             .overlay(alignment: .bottomTrailing) {
                 if !transactions.isEmpty {
                     FloatingAddButton {
