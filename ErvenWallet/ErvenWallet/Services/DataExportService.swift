@@ -12,6 +12,28 @@ struct ExportPayload: Codable {
     let transactions: [TransactionDTO]
     let budgets: [BudgetDTO]
     let savingsGoals: [SavingsGoalDTO]
+    let debts: [DebtDTO]
+    let debtPayments: [DebtPaymentDTO]
+}
+
+struct DebtDTO: Codable {
+    let id: UUID
+    let name: String
+    let direction: String
+    let totalAmount: Decimal
+    let remainingAmount: Decimal
+    let interestRate: Decimal?
+    let dueDate: Date?
+    let notes: String?
+    let createdAt: Date
+}
+
+struct DebtPaymentDTO: Codable {
+    let id: UUID
+    let debtID: UUID?
+    let amount: Decimal
+    let date: Date
+    let notes: String?
 }
 
 struct SavingsGoalDTO: Codable {
@@ -72,7 +94,7 @@ struct TransactionDTO: Codable {
 }
 
 enum DataExportService {
-    static let currentSchemaVersion = 3
+    static let currentSchemaVersion = 4
 
     @MainActor
     static func export(from context: ModelContext) throws -> Data {
@@ -81,6 +103,8 @@ enum DataExportService {
         let transactions = try context.fetch(FetchDescriptor<Transaction>())
         let budgets = try context.fetch(FetchDescriptor<Budget>())
         let savingsGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
+        let debts = try context.fetch(FetchDescriptor<Debt>())
+        let debtPayments = try context.fetch(FetchDescriptor<DebtPayment>())
 
         let payload = ExportPayload(
             schemaVersion: currentSchemaVersion,
@@ -90,7 +114,9 @@ enum DataExportService {
             categories: categories.map(CategoryDTO.init(from:)),
             transactions: transactions.map(TransactionDTO.init(from:)),
             budgets: budgets.map(BudgetDTO.init(from:)),
-            savingsGoals: savingsGoals.map(SavingsGoalDTO.init(from:))
+            savingsGoals: savingsGoals.map(SavingsGoalDTO.init(from:)),
+            debts: debts.map(DebtDTO.init(from:)),
+            debtPayments: debtPayments.map(DebtPaymentDTO.init(from:))
         )
 
         let encoder = JSONEncoder()
@@ -183,5 +209,29 @@ private extension SavingsGoalDTO {
         self.colorHex = goal.colorHex
         self.linkedAccountID = goal.linkedAccount?.id
         self.createdAt = goal.createdAt
+    }
+}
+
+private extension DebtDTO {
+    init(from debt: Debt) {
+        self.id = debt.id
+        self.name = debt.name
+        self.direction = debt.directionRaw
+        self.totalAmount = debt.totalAmount
+        self.remainingAmount = debt.remainingAmount
+        self.interestRate = debt.interestRate
+        self.dueDate = debt.dueDate
+        self.notes = debt.notes
+        self.createdAt = debt.createdAt
+    }
+}
+
+private extension DebtPaymentDTO {
+    init(from payment: DebtPayment) {
+        self.id = payment.id
+        self.debtID = payment.debt?.id
+        self.amount = payment.amount
+        self.date = payment.date
+        self.notes = payment.notes
     }
 }

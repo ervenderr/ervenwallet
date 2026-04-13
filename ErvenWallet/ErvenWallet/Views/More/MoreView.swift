@@ -10,6 +10,14 @@ struct MoreView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Tracking") {
+                    NavigationLink {
+                        DebtListView()
+                    } label: {
+                        Label("Debts", systemImage: "arrow.left.arrow.right.circle")
+                    }
+                }
+
                 Section("Data") {
                     Button {
                         exportData()
