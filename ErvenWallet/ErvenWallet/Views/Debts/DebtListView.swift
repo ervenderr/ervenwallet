@@ -43,10 +43,10 @@ struct DebtListView: View {
             }
         }
         .sheet(isPresented: $showingAddSheet) {
-            AddDebtSheet()
+            AddDebtSheet().themeSheet()
         }
         .sheet(item: $payingDebt) { debt in
-            LogPaymentSheet(debt: debt)
+            LogPaymentSheet(debt: debt).themeSheet()
         }
     }
 
@@ -55,63 +55,108 @@ struct DebtListView: View {
             Label("No debts tracked", systemImage: "arrow.left.arrow.right.circle")
         } description: {
             Text("Track money you owe and money owed to you.")
+        } actions: {
+            Button {
+                showingAddSheet = true
+                Haptics.impact(.light)
+            } label: {
+                Label("Add Debt", systemImage: "plus")
+                    .font(.headline)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.vertical, Theme.Spacing.sm)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.Palette.primary)
         }
     }
 
     private var list: some View {
-        List {
-            Section {
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("I Owe").font(.caption).foregroundStyle(.secondary)
-                        Text(CurrencyFormatter.format(totalOwed))
-                            .font(.headline.monospacedDigit())
-                            .foregroundStyle(totalOwed > 0 ? Color.red : Color.primary)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing) {
-                        Text("Owed to Me").font(.caption).foregroundStyle(.secondary)
-                        Text(CurrencyFormatter.format(totalOwing))
-                            .font(.headline.monospacedDigit())
-                            .foregroundStyle(totalOwing > 0 ? Color.green : Color.primary)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
+        ScrollView {
+            VStack(spacing: Theme.Spacing.lg) {
+                summaryCard
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.top, Theme.Spacing.sm)
 
-            if !iOwe.isEmpty {
-                Section("I Owe") {
-                    ForEach(iOwe) { debt in
-                        DebtRow(debt: debt)
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button {
-                                    payingDebt = debt
-                                } label: {
-                                    Label("Pay", systemImage: "creditcard")
-                                }
-                                .tint(.green)
-                            }
-                    }
-                    .onDelete { offsets in delete(items: iOwe, at: offsets) }
+                if !iOwe.isEmpty {
+                    debtSection(title: "I Owe", debts: iOwe)
                 }
+                if !owedToMe.isEmpty {
+                    debtSection(title: "Owed to Me", debts: owedToMe)
+                }
+                Spacer(minLength: Theme.Spacing.xl)
             }
+        }
+        .background(Theme.Palette.surface)
+    }
 
-            if !owedToMe.isEmpty {
-                Section("Owed to Me") {
-                    ForEach(owedToMe) { debt in
-                        DebtRow(debt: debt)
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button {
-                                    payingDebt = debt
-                                } label: {
-                                    Label("Receive", systemImage: "arrow.down.circle")
-                                }
-                                .tint(.green)
+    private var summaryCard: some View {
+        HStack(spacing: Theme.Spacing.lg) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                Text("I Owe")
+                    .font(.caption)
+                    .foregroundStyle(Color.white.opacity(0.75))
+                Text(CurrencyFormatter.format(totalOwed))
+                    .font(.title3.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: totalOwed)
+            }
+            Spacer()
+            Rectangle()
+                .fill(Color.white.opacity(0.2))
+                .frame(width: 1, height: 36)
+            Spacer()
+            VStack(alignment: .trailing, spacing: Theme.Spacing.xs) {
+                Text("Owed to Me")
+                    .font(.caption)
+                    .foregroundStyle(Color.white.opacity(0.75))
+                Text(CurrencyFormatter.format(totalOwing))
+                    .font(.title3.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(Theme.Palette.accentLight)
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: totalOwing)
+            }
+        }
+        .padding(Theme.Spacing.xl)
+        .frame(maxWidth: .infinity)
+        .background(Theme.Gradients.hero)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.xl, style: .continuous))
+        .themeShadow(Theme.Shadow.hero)
+    }
+
+    private func debtSection(title: String, debts: [Debt]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, Theme.Spacing.lg)
+
+            VStack(spacing: Theme.Spacing.sm) {
+                ForEach(debts) { debt in
+                    DebtRow(debt: debt)
+                        .padding(Theme.Spacing.md)
+                        .background(Theme.Palette.surfaceElevated)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                        .onTapGesture {
+                            payingDebt = debt
+                            Haptics.impact(.light)
+                        }
+                        .contextMenu {
+                            Button {
+                                payingDebt = debt
+                            } label: {
+                                Label("Log Payment", systemImage: "creditcard")
                             }
-                    }
-                    .onDelete { offsets in delete(items: owedToMe, at: offsets) }
+                            Button(role: .destructive) {
+                                modelContext.delete(debt)
+                                Haptics.impact(.medium)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                 }
             }
+            .padding(.horizontal, Theme.Spacing.lg)
         }
     }
 
@@ -138,7 +183,7 @@ private struct DebtRow: View {
             }
 
             ProgressView(value: debt.progress)
-                .tint(debt.isSettled ? .green : .accentColor)
+                .tint(debt.isSettled ? Theme.Palette.income : Theme.Palette.primary)
 
             HStack {
                 Text("\(CurrencyFormatter.format(debt.paidAmount)) / \(CurrencyFormatter.format(debt.totalAmount))")

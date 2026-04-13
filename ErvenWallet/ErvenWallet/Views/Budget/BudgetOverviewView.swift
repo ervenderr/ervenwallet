@@ -181,33 +181,57 @@ private struct BudgetRow: View {
         budget.amount - spent
     }
 
+    private var categoryTint: Color {
+        CategoryColor.color(for: budget.category?.name ?? "")
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(budget.category?.name ?? "Unknown", systemImage: budget.category?.icon ?? "tag")
-                    .labelStyle(.titleAndIcon)
-                Spacer()
-                Text("\(CurrencyFormatter.format(spent)) / \(CurrencyFormatter.format(budget.amount))")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-
-            ProgressView(value: min(progress, 1.0))
-                .tint(progressColor)
-
-            HStack {
-                Text(remaining >= 0
-                    ? "\(CurrencyFormatter.format(remaining)) left"
-                    : "Over by \(CurrencyFormatter.format(-remaining))")
-                    .font(.caption2)
-                    .foregroundStyle(remaining >= 0 ? Color.secondary : Color.red)
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            HStack(spacing: Theme.Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(categoryTint.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: budget.category?.icon ?? "tag")
+                        .foregroundStyle(categoryTint)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(budget.category?.name ?? "Unknown")
+                        .font(.body.weight(.medium))
+                    Text("\(CurrencyFormatter.format(spent)) of \(CurrencyFormatter.format(budget.amount))")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 Text("\(Int(progress * 100))%")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(progressColor)
             }
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.secondary.opacity(0.15))
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [progressColor.opacity(0.7), progressColor],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: proxy.size.width * min(progress, 1.0))
+                        .animation(.snappy, value: progress)
+                }
+            }
+            .frame(height: 8)
+
+            Text(remaining >= 0
+                ? "\(CurrencyFormatter.format(remaining)) left"
+                : "Over by \(CurrencyFormatter.format(-remaining))")
+                .font(.caption2)
+                .foregroundStyle(remaining >= 0 ? Color.secondary : Theme.Palette.expense)
         }
-        .padding(.vertical, 4)
     }
 }
 
