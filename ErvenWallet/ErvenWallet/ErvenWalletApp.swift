@@ -11,7 +11,8 @@ struct ErvenWalletApp: App {
             Budget.self,
             SavingsGoal.self,
             Debt.self,
-            DebtPayment.self
+            DebtPayment.self,
+            RecurringRule.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

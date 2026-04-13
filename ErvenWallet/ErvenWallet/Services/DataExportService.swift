@@ -14,6 +14,22 @@ struct ExportPayload: Codable {
     let savingsGoals: [SavingsGoalDTO]
     let debts: [DebtDTO]
     let debtPayments: [DebtPaymentDTO]
+    let recurringRules: [RecurringRuleDTO]
+}
+
+struct RecurringRuleDTO: Codable {
+    let id: UUID
+    let amount: Decimal
+    let type: String
+    let frequency: String
+    let startDate: Date
+    let endDate: Date?
+    let lastGeneratedDate: Date?
+    let notes: String?
+    let accountID: UUID?
+    let toAccountID: UUID?
+    let categoryID: UUID?
+    let createdAt: Date
 }
 
 struct DebtDTO: Codable {
@@ -94,7 +110,7 @@ struct TransactionDTO: Codable {
 }
 
 enum DataExportService {
-    static let currentSchemaVersion = 4
+    static let currentSchemaVersion = 5
 
     @MainActor
     static func export(from context: ModelContext) throws -> Data {
@@ -105,6 +121,7 @@ enum DataExportService {
         let savingsGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
         let debts = try context.fetch(FetchDescriptor<Debt>())
         let debtPayments = try context.fetch(FetchDescriptor<DebtPayment>())
+        let recurringRules = try context.fetch(FetchDescriptor<RecurringRule>())
 
         let payload = ExportPayload(
             schemaVersion: currentSchemaVersion,
@@ -116,7 +133,8 @@ enum DataExportService {
             budgets: budgets.map(BudgetDTO.init(from:)),
             savingsGoals: savingsGoals.map(SavingsGoalDTO.init(from:)),
             debts: debts.map(DebtDTO.init(from:)),
-            debtPayments: debtPayments.map(DebtPaymentDTO.init(from:))
+            debtPayments: debtPayments.map(DebtPaymentDTO.init(from:)),
+            recurringRules: recurringRules.map(RecurringRuleDTO.init(from:))
         )
 
         let encoder = JSONEncoder()
@@ -233,5 +251,22 @@ private extension DebtPaymentDTO {
         self.amount = payment.amount
         self.date = payment.date
         self.notes = payment.notes
+    }
+}
+
+private extension RecurringRuleDTO {
+    init(from rule: RecurringRule) {
+        self.id = rule.id
+        self.amount = rule.amount
+        self.type = rule.typeRaw
+        self.frequency = rule.frequencyRaw
+        self.startDate = rule.startDate
+        self.endDate = rule.endDate
+        self.lastGeneratedDate = rule.lastGeneratedDate
+        self.notes = rule.notes
+        self.accountID = rule.account?.id
+        self.toAccountID = rule.toAccount?.id
+        self.categoryID = rule.category?.id
+        self.createdAt = rule.createdAt
     }
 }

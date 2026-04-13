@@ -16,6 +16,11 @@ struct MoreView: View {
                     } label: {
                         Label("Debts", systemImage: "arrow.left.arrow.right.circle")
                     }
+                    NavigationLink {
+                        RecurringRulesView()
+                    } label: {
+                        Label("Recurring", systemImage: "repeat")
+                    }
                 }
 
                 Section("Data") {

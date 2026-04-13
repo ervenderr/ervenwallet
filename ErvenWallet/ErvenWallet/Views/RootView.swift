@@ -32,6 +32,7 @@ struct RootView: View {
         }
         .task {
             DefaultCategories.seedIfNeeded(in: modelContext)
+            RecurringService.generateAll(in: modelContext)
         }
     }
 }

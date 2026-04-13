@@ -15,6 +15,10 @@ struct AddTransactionSheet: View {
     @State private var selectedCategoryID: UUID?
     @State private var selectedAccountID: UUID?
     @State private var selectedToAccountID: UUID?
+    @State private var isRecurring: Bool = false
+    @State private var frequency: Frequency = .monthly
+    @State private var hasEndDate: Bool = false
+    @State private var endDate: Date = Date().addingTimeInterval(60 * 60 * 24 * 365)
 
     private var parsedAmount: Decimal {
         Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? .zero
@@ -97,6 +101,27 @@ struct AddTransactionSheet: View {
                     TextField("Notes (optional)", text: $notes, axis: .vertical)
                         .lineLimit(1...3)
                 }
+
+                Section {
+                    Toggle("Recurring", isOn: $isRecurring)
+                    if isRecurring {
+                        Picker("Frequency", selection: $frequency) {
+                            ForEach(Frequency.allCases) { freq in
+                                Text(freq.rawValue.capitalized).tag(freq)
+                            }
+                        }
+                        Toggle("Set end date", isOn: $hasEndDate)
+                        if hasEndDate {
+                            DatePicker("Ends on", selection: $endDate, displayedComponents: .date)
+                        }
+                    }
+                } header: {
+                    Text("Repeat")
+                } footer: {
+                    if isRecurring {
+                        Text("First occurrence is created immediately. Future ones generate when you open the app.")
+                    }
+                }
             }
             .navigationTitle("New Transaction")
             .navigationBarTitleDisplayMode(.inline)
@@ -134,17 +159,37 @@ struct AddTransactionSheet: View {
     private func save() {
         guard let account = selectedAccount else { return }
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        let transaction = Transaction(
-            amount: parsedAmount,
-            type: type,
-            account: account,
-            toAccount: type == .transfer ? selectedToAccount : nil,
-            category: type == .transfer ? nil : selectedCategory,
-            date: date,
-            notes: trimmedNotes.isEmpty ? nil : trimmedNotes
-        )
-        modelContext.insert(transaction)
-        transaction.applyToBalances()
+        let resolvedNotes = trimmedNotes.isEmpty ? nil : trimmedNotes
+
+        if isRecurring {
+            let rule = RecurringRule(
+                amount: parsedAmount,
+                type: type,
+                frequency: frequency,
+                account: account,
+                toAccount: type == .transfer ? selectedToAccount : nil,
+                category: type == .transfer ? nil : selectedCategory,
+                startDate: date,
+                endDate: hasEndDate ? endDate : nil,
+                notes: resolvedNotes
+            )
+            modelContext.insert(rule)
+            // Materialize the first (and any past-due) occurrences immediately
+            // so the user sees a transaction right away.
+            RecurringService.generate(rule, in: modelContext, upTo: Date())
+        } else {
+            let transaction = Transaction(
+                amount: parsedAmount,
+                type: type,
+                account: account,
+                toAccount: type == .transfer ? selectedToAccount : nil,
+                category: type == .transfer ? nil : selectedCategory,
+                date: date,
+                notes: resolvedNotes
+            )
+            modelContext.insert(transaction)
+            transaction.applyToBalances()
+        }
         dismiss()
     }
 }
