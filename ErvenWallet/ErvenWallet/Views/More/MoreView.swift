@@ -23,6 +23,14 @@ struct MoreView: View {
                     }
                 }
 
+                Section("Insights") {
+                    NavigationLink {
+                        ReportsView()
+                    } label: {
+                        Label("Reports", systemImage: "chart.xyaxis.line")
+                    }
+                }
+
                 Section("Data") {
                     Button {
                         exportData()
