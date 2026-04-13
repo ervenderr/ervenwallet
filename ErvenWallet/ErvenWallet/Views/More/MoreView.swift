@@ -21,6 +21,11 @@ struct MoreView: View {
                     } label: {
                         Label("Recurring", systemImage: "repeat")
                     }
+                    NavigationLink {
+                        CategoriesView()
+                    } label: {
+                        Label("Categories", systemImage: "tag")
+                    }
                 }
 
                 Section("Insights") {
