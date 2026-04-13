@@ -59,25 +59,78 @@ struct WalletView: View {
     }
 
     private var accountsList: some View {
-        List {
-            Section {
-                HStack {
-                    Text("Net Worth")
-                        .font(.headline)
-                    Spacer()
-                    Text(CurrencyFormatter.format(netWorth))
-                        .font(.headline)
-                        .foregroundStyle(netWorth >= 0 ? Color.primary : Color.red)
-                }
-            }
+        ScrollView {
+            VStack(spacing: Theme.Spacing.lg) {
+                NetWorthHeroCard(netWorth: netWorth, accountCount: accounts.count)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.top, Theme.Spacing.sm)
 
-            Section("Accounts") {
-                ForEach(accounts) { account in
-                    AccountRow(account: account, transactions: transactions)
+                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                    Text("Accounts")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, Theme.Spacing.lg)
+
+                    VStack(spacing: Theme.Spacing.sm) {
+                        ForEach(accounts) { account in
+                            AccountRow(account: account, transactions: transactions)
+                                .padding(Theme.Spacing.md)
+                                .background(Theme.Palette.surfaceElevated)
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        modelContext.delete(account)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Spacing.lg)
                 }
-                .onDelete(perform: deleteAccounts)
+
+                Spacer(minLength: Theme.Spacing.xl)
             }
         }
+        .background(Theme.Palette.surface)
+    }
+}
+
+private struct NetWorthHeroCard: View {
+    let netWorth: Decimal
+    let accountCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Text("Net Worth")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.white.opacity(0.85))
+                Spacer()
+                Image(systemName: "wallet.pass.fill")
+                    .foregroundStyle(Theme.Palette.accentLight)
+            }
+
+            Text(CurrencyFormatter.format(netWorth))
+                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+
+            HStack(spacing: Theme.Spacing.xs) {
+                Image(systemName: "building.columns.fill")
+                    .font(.caption2)
+                Text("\(accountCount) \(accountCount == 1 ? "account" : "accounts")")
+                    .font(.caption)
+            }
+            .foregroundStyle(Color.white.opacity(0.75))
+        }
+        .padding(Theme.Spacing.xl)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Gradients.hero)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.xl, style: .continuous))
+        .themeShadow(Theme.Shadow.hero)
     }
 }
 

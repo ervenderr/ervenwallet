@@ -45,20 +45,37 @@ struct GoalsListView: View {
     }
 
     private var list: some View {
-        List {
-            ForEach(goals) { goal in
-                GoalRow(goal: goal)
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                        Button {
+        ScrollView {
+            VStack(spacing: Theme.Spacing.md) {
+                ForEach(goals) { goal in
+                    GoalRow(goal: goal)
+                        .padding(Theme.Spacing.lg)
+                        .background(Theme.Palette.surfaceElevated)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                        .onTapGesture {
                             contributingTo = goal
-                        } label: {
-                            Label("Contribute", systemImage: "plus.circle.fill")
+                            Haptics.impact(.light)
                         }
-                        .tint(.green)
-                    }
+                        .contextMenu {
+                            Button {
+                                contributingTo = goal
+                            } label: {
+                                Label("Contribute", systemImage: "plus.circle")
+                            }
+                            Button(role: .destructive) {
+                                modelContext.delete(goal)
+                                Haptics.impact(.medium)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                }
+                Spacer(minLength: Theme.Spacing.xl)
             }
-            .onDelete(perform: deleteGoals)
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.top, Theme.Spacing.sm)
         }
+        .background(Theme.Palette.surface)
     }
 
     private func deleteGoals(at offsets: IndexSet) {
@@ -84,7 +101,7 @@ private struct GoalRow: View {
             }
 
             ProgressView(value: goal.progress)
-                .tint(goal.isComplete ? .green : .accentColor)
+                .tint(goal.isComplete ? Theme.Palette.income : Theme.Palette.primary)
 
             HStack {
                 Text("\(CurrencyFormatter.format(goal.currentAmount)) / \(CurrencyFormatter.format(goal.targetAmount))")
@@ -154,6 +171,7 @@ private struct LogContributionSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
                         goal.currentAmount += parsedAmount
+                        Haptics.notify(.success)
                         dismiss()
                     }
                     .disabled(parsedAmount <= 0)

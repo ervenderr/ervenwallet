@@ -58,39 +58,72 @@ struct BudgetOverviewView: View {
     }
 
     private var list: some View {
-        List {
-            Section {
+        ScrollView {
+            VStack(spacing: Theme.Spacing.lg) {
                 summaryHeader
-            }
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.top, Theme.Spacing.sm)
 
-            Section("Categories") {
-                ForEach(currentMonthBudgets) { budget in
-                    BudgetRow(budget: budget, spent: spent(for: budget))
+                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                    Text("Categories")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, Theme.Spacing.lg)
+
+                    VStack(spacing: Theme.Spacing.sm) {
+                        ForEach(currentMonthBudgets) { budget in
+                            BudgetRow(budget: budget, spent: spent(for: budget))
+                                .padding(Theme.Spacing.md)
+                                .background(Theme.Palette.surfaceElevated)
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        modelContext.delete(budget)
+                                        Haptics.impact(.medium)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Spacing.lg)
                 }
-                .onDelete(perform: deleteBudgets)
+
+                Spacer(minLength: Theme.Spacing.xl)
             }
         }
+        .background(Theme.Palette.surface)
     }
 
     private var summaryHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text(currentMonth, format: .dateTime.month(.wide).year())
-                .font(.title3.weight(.semibold))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.white.opacity(0.85))
+
+            Text(CurrencyFormatter.format(totalSpent))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+
             HStack {
-                VStack(alignment: .leading) {
-                    Text("Spent").font(.caption).foregroundStyle(.secondary)
-                    Text(CurrencyFormatter.format(totalSpent))
-                        .font(.headline.monospacedDigit())
-                }
+                Text("of \(CurrencyFormatter.format(totalBudgeted))")
+                    .font(.caption)
+                    .foregroundStyle(Color.white.opacity(0.75))
                 Spacer()
-                VStack(alignment: .trailing) {
-                    Text("Budgeted").font(.caption).foregroundStyle(.secondary)
-                    Text(CurrencyFormatter.format(totalBudgeted))
-                        .font(.headline.monospacedDigit())
-                }
+                let remaining = totalBudgeted - totalSpent
+                Text(remaining >= 0 ? "\(CurrencyFormatter.format(remaining)) left" : "Over by \(CurrencyFormatter.format(-remaining))")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(remaining >= 0 ? Theme.Palette.accentLight : Color.white)
             }
         }
-        .padding(.vertical, 4)
+        .padding(Theme.Spacing.xl)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Gradients.hero)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.xl, style: .continuous))
+        .themeShadow(Theme.Shadow.hero)
     }
 
     private func spent(for budget: Budget) -> Decimal {
@@ -124,9 +157,9 @@ private struct BudgetRow: View {
 
     private var progressColor: Color {
         switch progress {
-        case ..<0.8: return .green
-        case ..<1.0: return .orange
-        default: return .red
+        case ..<0.8: return Theme.Palette.income
+        case ..<1.0: return Theme.Palette.accent
+        default: return Theme.Palette.expense
         }
     }
 

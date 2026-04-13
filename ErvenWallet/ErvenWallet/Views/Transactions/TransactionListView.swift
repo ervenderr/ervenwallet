@@ -40,18 +40,40 @@ struct TransactionListView: View {
     }
 
     private var list: some View {
-        List {
-            ForEach(groupedByDay, id: \.key) { day, items in
-                Section(header: Text(day, format: .dateTime.weekday(.wide).month().day())) {
-                    ForEach(items) { transaction in
-                        TransactionRow(transaction: transaction)
-                    }
-                    .onDelete { offsets in
-                        delete(items: items, at: offsets)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg, pinnedViews: []) {
+                ForEach(groupedByDay, id: \.key) { day, items in
+                    VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                        Text(day, format: .dateTime.weekday(.wide).month().day())
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, Theme.Spacing.lg)
+
+                        VStack(spacing: 1) {
+                            ForEach(items) { transaction in
+                                TransactionRow(transaction: transaction)
+                                    .padding(Theme.Spacing.md)
+                                    .background(Theme.Palette.surfaceElevated)
+                                    .contextMenu {
+                                        Button(role: .destructive) {
+                                            transaction.revertFromBalances()
+                                            modelContext.delete(transaction)
+                                            Haptics.impact(.medium)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                        .padding(.horizontal, Theme.Spacing.lg)
                     }
                 }
+                Spacer(minLength: Theme.Spacing.xl)
             }
+            .padding(.top, Theme.Spacing.sm)
         }
+        .background(Theme.Palette.surface)
     }
 
     private var groupedByDay: [(key: Date, value: [Transaction])] {
@@ -75,13 +97,13 @@ private struct TransactionRow: View {
     let transaction: Transaction
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Theme.Spacing.md) {
             ZStack {
                 Circle()
-                    .fill(.tint.opacity(0.15))
+                    .fill(iconBackground)
                     .frame(width: 40, height: 40)
                 Image(systemName: iconName)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(iconForeground)
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -95,10 +117,25 @@ private struct TransactionRow: View {
             Spacer()
 
             Text(amountLabel)
-                .font(.body.monospacedDigit())
+                .font(.body.monospacedDigit().weight(.semibold))
                 .foregroundStyle(amountColor)
         }
-        .padding(.vertical, 2)
+    }
+
+    private var iconBackground: Color {
+        switch transaction.type {
+        case .expense: return Theme.Palette.expense.opacity(0.15)
+        case .income: return Theme.Palette.income.opacity(0.15)
+        case .transfer: return Theme.Palette.primary.opacity(0.15)
+        }
+    }
+
+    private var iconForeground: Color {
+        switch transaction.type {
+        case .expense: return Theme.Palette.expense
+        case .income: return Theme.Palette.income
+        case .transfer: return Theme.Palette.primary
+        }
     }
 
     private var iconName: String {
@@ -138,8 +175,8 @@ private struct TransactionRow: View {
 
     private var amountColor: Color {
         switch transaction.type {
-        case .expense: return .red
-        case .income: return .green
+        case .expense: return Theme.Palette.expense
+        case .income: return Theme.Palette.income
         case .transfer: return .primary
         }
     }

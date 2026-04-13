@@ -30,6 +30,7 @@ struct RootView: View {
                     Label("More", systemImage: "ellipsis.circle")
                 }
         }
+        .tint(Theme.Palette.primary)
         .task {
             DefaultCategories.seedIfNeeded(in: modelContext)
             RecurringService.generateAll(in: modelContext)
