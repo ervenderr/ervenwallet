@@ -90,4 +90,35 @@ extension View {
     func themeShadow(_ style: Theme.ShadowStyle) -> some View {
         self.shadow(color: style.color, radius: style.radius, x: style.x, y: style.y)
     }
+
+    /// Standard modal detents + drag indicator for Add sheets.
+    func themeSheet() -> some View {
+        self
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+    }
+}
+
+/// Deterministic color for a category name, so the same category gets the
+/// same color across transaction rows, budget bars, and reports.
+enum CategoryColor {
+    private static let palette: [Color] = [
+        Color(red: 0.06, green: 0.47, blue: 0.43),   // teal
+        Color(red: 0.96, green: 0.62, blue: 0.04),   // gold
+        Color(red: 0.06, green: 0.73, blue: 0.51),   // emerald
+        Color(red: 0.94, green: 0.27, blue: 0.27),   // coral
+        Color(red: 0.55, green: 0.36, blue: 0.96),   // violet
+        Color(red: 0.02, green: 0.58, blue: 0.80),   // sky
+        Color(red: 0.93, green: 0.47, blue: 0.78),   // pink
+        Color(red: 0.43, green: 0.54, blue: 0.18),   // olive
+    ]
+
+    static func color(for name: String) -> Color {
+        guard !name.isEmpty else { return palette[0] }
+        var hash = 5381
+        for byte in name.utf8 {
+            hash = ((hash << 5) &+ hash) &+ Int(byte)
+        }
+        return palette[abs(hash) % palette.count]
+    }
 }

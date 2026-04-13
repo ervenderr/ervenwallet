@@ -190,6 +190,7 @@ struct AddTransactionSheet: View {
             modelContext.insert(transaction)
             transaction.applyToBalances()
         }
+        Haptics.notify(.success)
         dismiss()
     }
 }

@@ -28,10 +28,10 @@ struct GoalsListView: View {
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
-                AddGoalSheet()
+                AddGoalSheet().themeSheet()
             }
             .sheet(item: $contributingTo) { goal in
-                LogContributionSheet(goal: goal)
+                LogContributionSheet(goal: goal).themeSheet()
             }
         }
     }
@@ -41,6 +41,18 @@ struct GoalsListView: View {
             Label("No goals yet", systemImage: "target")
         } description: {
             Text("Set a savings target — emergency fund, new laptop, travel.")
+        } actions: {
+            Button {
+                showingAddSheet = true
+                Haptics.impact(.light)
+            } label: {
+                Label("Create Goal", systemImage: "plus")
+                    .font(.headline)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.vertical, Theme.Spacing.sm)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.Palette.primary)
         }
     }
 

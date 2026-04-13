@@ -39,7 +39,7 @@ struct WalletView: View {
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
-                AddAccountSheet()
+                AddAccountSheet().themeSheet()
             }
         }
     }
@@ -55,6 +55,18 @@ struct WalletView: View {
             Label("No accounts yet", systemImage: "wallet.pass")
         } description: {
             Text("Add your first account to start tracking your money.")
+        } actions: {
+            Button {
+                showingAddSheet = true
+                Haptics.impact(.light)
+            } label: {
+                Label("Add Account", systemImage: "plus")
+                    .font(.headline)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.vertical, Theme.Spacing.sm)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.Palette.primary)
         }
     }
 
@@ -117,6 +129,8 @@ private struct NetWorthHeroCard: View {
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
+                .contentTransition(.numericText())
+                .animation(.snappy, value: netWorth)
 
             HStack(spacing: Theme.Spacing.xs) {
                 Image(systemName: "building.columns.fill")

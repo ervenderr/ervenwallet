@@ -44,7 +44,7 @@ struct BudgetOverviewView: View {
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
-                AddBudgetSheet(month: currentMonth)
+                AddBudgetSheet(month: currentMonth).themeSheet()
             }
         }
     }
@@ -54,6 +54,18 @@ struct BudgetOverviewView: View {
             Label("No budgets this month", systemImage: "chart.pie")
         } description: {
             Text("Set monthly limits per category to track your spending.")
+        } actions: {
+            Button {
+                showingAddSheet = true
+                Haptics.impact(.light)
+            } label: {
+                Label("Create Budget", systemImage: "plus")
+                    .font(.headline)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.vertical, Theme.Spacing.sm)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.Palette.primary)
         }
     }
 
@@ -107,6 +119,8 @@ struct BudgetOverviewView: View {
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
+                .contentTransition(.numericText())
+                .animation(.snappy, value: totalSpent)
 
             HStack {
                 Text("of \(CurrencyFormatter.format(totalBudgeted))")

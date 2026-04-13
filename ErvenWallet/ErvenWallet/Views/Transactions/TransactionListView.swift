@@ -27,6 +27,7 @@ struct TransactionListView: View {
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddTransactionSheet()
+                    .presentationDragIndicator(.visible)
             }
         }
     }
@@ -35,7 +36,19 @@ struct TransactionListView: View {
         ContentUnavailableView {
             Label("No transactions yet", systemImage: "list.bullet.rectangle")
         } description: {
-            Text("Tap + to log your first expense, income, or transfer.")
+            Text("Tap to log your first expense, income, or transfer.")
+        } actions: {
+            Button {
+                showingAddSheet = true
+                Haptics.impact(.light)
+            } label: {
+                Label("Log Transaction", systemImage: "plus")
+                    .font(.headline)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.vertical, Theme.Spacing.sm)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.Palette.primary)
         }
     }
 
@@ -122,21 +135,18 @@ private struct TransactionRow: View {
         }
     }
 
-    private var iconBackground: Color {
-        switch transaction.type {
-        case .expense: return Theme.Palette.expense.opacity(0.15)
-        case .income: return Theme.Palette.income.opacity(0.15)
-        case .transfer: return Theme.Palette.primary.opacity(0.15)
+    private var iconTint: Color {
+        if transaction.type == .transfer {
+            return Theme.Palette.primary
         }
+        if let name = transaction.category?.name {
+            return CategoryColor.color(for: name)
+        }
+        return transaction.type == .expense ? Theme.Palette.expense : Theme.Palette.income
     }
 
-    private var iconForeground: Color {
-        switch transaction.type {
-        case .expense: return Theme.Palette.expense
-        case .income: return Theme.Palette.income
-        case .transfer: return Theme.Palette.primary
-        }
-    }
+    private var iconBackground: Color { iconTint.opacity(0.15) }
+    private var iconForeground: Color { iconTint }
 
     private var iconName: String {
         if transaction.type == .transfer { return "arrow.left.arrow.right" }

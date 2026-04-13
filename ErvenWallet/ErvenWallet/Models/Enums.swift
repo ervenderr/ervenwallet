@@ -15,7 +15,7 @@ enum AccountType: String, Codable, CaseIterable, Identifiable {
         case .bank: "Bank"
         case .eWallet: "E-Wallet"
         case .creditCard: "Credit Card"
-        case .investment: "Investment"
+        case .investment: "Investment"  
         }
     }
 
