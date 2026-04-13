@@ -67,3 +67,6 @@ Models/Gemma*/
 
 # Project docs scratch
 .scratch/
+
+# Local reference doc, intentionally not tracked
+Erven finance app spec and plan.md
