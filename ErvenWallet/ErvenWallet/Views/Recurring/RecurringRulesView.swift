@@ -5,6 +5,8 @@ struct RecurringRulesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \RecurringRule.createdAt) private var rules: [RecurringRule]
 
+    @State private var editingRule: RecurringRule?
+
     var body: some View {
         Group {
             if rules.isEmpty {
@@ -14,6 +16,9 @@ struct RecurringRulesView: View {
             }
         }
         .navigationTitle("Recurring")
+        .sheet(item: $editingRule) { rule in
+            EditRecurringRuleSheet(rule: rule).themeSheet()
+        }
     }
 
     private var emptyState: some View {
@@ -25,18 +30,38 @@ struct RecurringRulesView: View {
     }
 
     private var list: some View {
-        List {
-            ForEach(rules) { rule in
-                RecurringRuleRow(rule: rule)
+        ScrollView {
+            VStack(spacing: Theme.Spacing.sm) {
+                ForEach(rules) { rule in
+                    RecurringRuleRow(rule: rule)
+                        .padding(Theme.Spacing.md)
+                        .background(Theme.Palette.surfaceElevated)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            editingRule = rule
+                            Haptics.impact(.light)
+                        }
+                        .contextMenu {
+                            Button {
+                                editingRule = rule
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            Button(role: .destructive) {
+                                modelContext.delete(rule)
+                                Haptics.impact(.medium)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                }
+                Spacer(minLength: Theme.Spacing.xl)
             }
-            .onDelete(perform: deleteRules)
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.top, Theme.Spacing.sm)
         }
-    }
-
-    private func deleteRules(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(rules[index])
-        }
+        .background(Theme.Palette.surface)
     }
 }
 
@@ -92,8 +117,8 @@ private struct RecurringRuleRow: View {
 
     private var amountColor: Color {
         switch rule.type {
-        case .expense: return .red
-        case .income: return .green
+        case .expense: return Theme.Palette.expense
+        case .income: return Theme.Palette.income
         case .transfer: return .primary
         }
     }
