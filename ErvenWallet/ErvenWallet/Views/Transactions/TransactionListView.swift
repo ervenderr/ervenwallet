@@ -5,6 +5,29 @@ struct TransactionListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @State private var showingAddSheet = false
+    @State private var filter: Filter = .all
+
+    enum Filter: String, CaseIterable, Identifiable {
+        case all, expense, income, transfer
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .all: return "All"
+            case .expense: return "Expense"
+            case .income: return "Income"
+            case .transfer: return "Transfer"
+            }
+        }
+    }
+
+    private var filteredTransactions: [Transaction] {
+        switch filter {
+        case .all: return transactions
+        case .expense: return transactions.filter { $0.type == .expense }
+        case .income: return transactions.filter { $0.type == .income }
+        case .transfer: return transactions.filter { $0.type == .transfer }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -12,7 +35,26 @@ struct TransactionListView: View {
                 if transactions.isEmpty {
                     emptyState
                 } else {
-                    list
+                    VStack(spacing: 0) {
+                        Picker("Filter", selection: $filter) {
+                            ForEach(Filter.allCases) { option in
+                                Text(option.label).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, Theme.Spacing.lg)
+                        .padding(.top, Theme.Spacing.sm)
+                        .padding(.bottom, Theme.Spacing.xs)
+
+                        if filteredTransactions.isEmpty {
+                            ContentUnavailableView(
+                                "No \(filter.label.lowercased()) transactions",
+                                systemImage: "line.3.horizontal.decrease.circle"
+                            )
+                        } else {
+                            list
+                        }
+                    }
                 }
             }
             .navigationTitle("Transactions")
@@ -91,7 +133,7 @@ struct TransactionListView: View {
 
     private var groupedByDay: [(key: Date, value: [Transaction])] {
         let calendar = Calendar.current
-        let groups = Dictionary(grouping: transactions) { transaction in
+        let groups = Dictionary(grouping: filteredTransactions) { transaction in
             calendar.startOfDay(for: transaction.date)
         }
         return groups.sorted { $0.key > $1.key }
