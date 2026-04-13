@@ -34,6 +34,9 @@ struct RootView: View {
         .task {
             DefaultCategories.seedIfNeeded(in: modelContext)
             RecurringService.generateAll(in: modelContext)
+            await NotificationService.requestAuthorizationIfNeeded()
+            NotificationService.rescheduleBillReminders(in: modelContext)
+            NotificationService.checkBudgetAlerts(in: modelContext)
         }
     }
 }
