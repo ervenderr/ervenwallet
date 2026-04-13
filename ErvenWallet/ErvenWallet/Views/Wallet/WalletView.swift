@@ -101,10 +101,121 @@ struct WalletView: View {
                     .padding(.horizontal, Theme.Spacing.lg)
                 }
 
+                monthSnapshot
+                    .padding(.horizontal, Theme.Spacing.lg)
+
                 Spacer(minLength: Theme.Spacing.xl)
             }
         }
         .background(Theme.Palette.surface)
+    }
+
+    private var monthSnapshot: some View {
+        let (spent, income, topCategory) = currentMonthStats()
+        return VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            Text("This Month")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: Theme.Spacing.md) {
+                MiniStatCard(
+                    label: "Spent",
+                    value: CurrencyFormatter.format(spent),
+                    icon: "arrow.down.right",
+                    tint: Theme.Palette.expense
+                )
+                MiniStatCard(
+                    label: "Income",
+                    value: CurrencyFormatter.format(income),
+                    icon: "arrow.up.right",
+                    tint: Theme.Palette.income
+                )
+            }
+
+            if let top = topCategory {
+                HStack(spacing: Theme.Spacing.md) {
+                    ZStack {
+                        Circle()
+                            .fill(CategoryColor.color(for: top.name).opacity(0.15))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: top.icon)
+                            .foregroundStyle(CategoryColor.color(for: top.name))
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Top category")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(top.name)
+                            .font(.body.weight(.medium))
+                    }
+                    Spacer()
+                    Text(CurrencyFormatter.format(top.amount))
+                        .font(.body.monospacedDigit().weight(.semibold))
+                }
+                .padding(Theme.Spacing.md)
+                .background(Theme.Palette.surfaceElevated)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+            }
+        }
+    }
+
+    private func currentMonthStats() -> (spent: Decimal, income: Decimal, top: (name: String, icon: String, amount: Decimal)?) {
+        let calendar = Calendar.current
+        let now = Date()
+        var spent: Decimal = 0
+        var income: Decimal = 0
+        var categoryTotals: [String: (icon: String, amount: Decimal)] = [:]
+
+        for txn in transactions {
+            guard calendar.isDate(txn.date, equalTo: now, toGranularity: .month) else { continue }
+            switch txn.type {
+            case .expense:
+                spent += txn.amount
+                let name = txn.category?.name ?? "Uncategorized"
+                let icon = txn.category?.icon ?? "tag"
+                let existing = categoryTotals[name]?.amount ?? 0
+                categoryTotals[name] = (icon, existing + txn.amount)
+            case .income:
+                income += txn.amount
+            case .transfer:
+                break
+            }
+        }
+
+        let top = categoryTotals
+            .max { $0.value.amount < $1.value.amount }
+            .map { ($0.key, $0.value.icon, $0.value.amount) }
+
+        return (spent, income, top)
+    }
+}
+
+private struct MiniStatCard: View {
+    let label: String
+    let value: String
+    let icon: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            HStack(spacing: Theme.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.caption.weight(.semibold))
+                Text(label)
+                    .font(.caption.weight(.medium))
+            }
+            .foregroundStyle(tint)
+
+            Text(value)
+                .font(.title3.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.primary)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.Spacing.md)
+        .background(Theme.Palette.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
     }
 }
 

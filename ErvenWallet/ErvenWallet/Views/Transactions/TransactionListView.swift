@@ -58,13 +58,14 @@ struct TransactionListView: View {
                 }
             }
             .navigationTitle("Transactions")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+            .overlay(alignment: .bottomTrailing) {
+                if !transactions.isEmpty {
+                    FloatingAddButton {
                         showingAddSheet = true
-                    } label: {
-                        Image(systemName: "plus")
+                        Haptics.impact(.light)
                     }
+                    .padding(.trailing, Theme.Spacing.lg)
+                    .padding(.bottom, Theme.Spacing.lg)
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
